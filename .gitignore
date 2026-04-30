@@ -1,0 +1,40 @@
+# Terraform state（機密情報を含む）
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# 変数ファイル（機密値を含む可能性）
+*.tfvars
+!*.tfvars.example
+
+# Lock file はコミットする（コメントアウト不要）
+# .terraform.lock.hcl
+
+# 認証情報・鍵
+*.pem
+*.key
+*.crt
+.env
+credentials
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ログ
+*.log
+
+# スクリーンショット（個人環境の画像）
+*.png
+*.jpg
+*.jpeg
+
+# bootstrap の state（別管理）
+terraform/bootstrap/.terraform/
+terraform/bootstrap/*.tfstate
+terraform/bootstrap/*.tfstate.*
