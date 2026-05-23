@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uo pipefail
+set -euo pipefail
 
 # ============================================================
 # Zabbix Agent Setup Script (Amazon Linux 2023)
@@ -27,11 +27,13 @@ rpm -Uvh "https://repo.zabbix.com/zabbix/$ZABBIX_VERSION/alma/9/x86_64/zabbix-re
 dnf clean all
 dnf install -y zabbix-agent2 || true
 
-# Get instance ID via IMDSv2
+# Get instance metadata via IMDSv2
 TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
   http://169.254.169.254/latest/meta-data/instance-id || echo "zabbix-agent")
+PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/local-ipv4)
 
 cat <<EOF > /etc/zabbix/zabbix_agent2.conf
 PidFile=/run/zabbix/zabbix_agent2.pid
@@ -51,13 +53,6 @@ systemctl enable --now zabbix-agent2 || true
 # 3. nginx (Connection Test Endpoints)
 # ============================================================
 dnf install -y nginx
-
-TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
-  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
-  http://169.254.169.254/latest/meta-data/instance-id)
-PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
-  http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # 200 OK page
 cat <<EOF > /usr/share/nginx/html/index.html

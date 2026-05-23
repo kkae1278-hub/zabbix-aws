@@ -14,7 +14,7 @@ aws ssm start-session --target <zabbix-server-instance-id> `
   --parameters '{\"portNumber\":[\"80\"],\"localPortNumber\":[\"8080\"]}'
 ```
 
-ブラウザで `http://localhost:8080/zabbix` を開き、`Admin` / `zabbix` でログイン。
+ブラウザで `http://localhost:8080/` を開き、`Admin` / `zabbix` でログイン。
 
 ---
 
@@ -49,12 +49,18 @@ aws ssm start-session --target <zabbix-server-instance-id> `
 
 **Add** で以下の 3 ステップを追加：
 
+> **注意**: ALB の DNS 名は `terraform apply` のたびに変わります。URL に入力する値は必ず以下で確認してください。
+> ```powershell
+> terraform output monitored_alb_dns_name
+> ```
+> または AWS コンソール → EC2 → ロードバランサー → `zabbix-monitored-alb` → DNS 名
+
 **Step 1 - 200 OK 確認**
 
 | 項目 | 値 |
 |------|-----|
 | Name | `200 OK Check` |
-| URL | `http://internal-zabbix-monitored-alb-134365578.ap-northeast-1.elb.amazonaws.com/` |
+| URL | `http://<terraform output monitored_alb_dns_name>/` |
 | Required status codes | `200` |
 
 **Step 2 - 4xx 確認**
@@ -62,7 +68,7 @@ aws ssm start-session --target <zabbix-server-instance-id> `
 | 項目 | 値 |
 |------|-----|
 | Name | `404 Check` |
-| URL | `http://internal-zabbix-monitored-alb-134365578.ap-northeast-1.elb.amazonaws.com/notfound` |
+| URL | `http://<terraform output monitored_alb_dns_name>/notfound` |
 | Required status codes | `404` |
 
 **Step 3 - 5xx 確認**
@@ -70,7 +76,7 @@ aws ssm start-session --target <zabbix-server-instance-id> `
 | 項目 | 値 |
 |------|-----|
 | Name | `503 Check` |
-| URL | `http://internal-zabbix-monitored-alb-134365578.ap-northeast-1.elb.amazonaws.com/error` |
+| URL | `http://<terraform output monitored_alb_dns_name>/error` |
 | Required status codes | `503` |
 
 **Add** をクリックして保存。

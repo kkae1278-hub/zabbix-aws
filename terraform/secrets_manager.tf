@@ -10,7 +10,7 @@ resource "random_password" "rds" {
 resource "aws_secretsmanager_secret" "rds_password" {
   name                    = "${var.project_name}/rds/password"
   description             = "Zabbix RDS master password"
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${var.project_name}-rds-secret"

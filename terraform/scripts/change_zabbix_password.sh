@@ -7,7 +7,7 @@
 set -euo pipefail
 
 NEW_PASSWORD="${1:?使い方: $0 <新しいパスワード>}"
-ZABBIX_URL="http://localhost/zabbix/api_jsonrpc.php"
+ZABBIX_URL="http://localhost/api_jsonrpc.php"
 
 echo "=== Zabbix Admin パスワード変更 ==="
 
@@ -55,4 +55,4 @@ print('OK: userid=' + str(data['result']['userids'][0]))
 
 echo "[3/3] $RESULT"
 echo "=== パスワード変更完了 ==="
-echo "新しいパスワードで http://localhost:8080/zabbix にログインしてください"
+echo "新しいパスワードで http://localhost:8080/ にログインしてください"

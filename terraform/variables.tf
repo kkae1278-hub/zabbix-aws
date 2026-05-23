@@ -46,12 +46,6 @@ variable "zabbix_version" {
   default     = "7.0"
 }
 
-variable "allowed_cidr_blocks" {
-  description = "ALB へのアクセスを許可する CIDR（自分の IP 等）"
-  type        = list(string)
-  default     = ["0.0.0.0/0"] # 本番では絞ること
-}
-
 variable "monitored_vpc_cidr" {
   description = "監視対象 VPC の CIDR ブロック"
   type        = string

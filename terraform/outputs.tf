@@ -34,7 +34,7 @@ output "ssm_connect_command" {
 }
 
 output "ssm_portforward_command" {
-  description = "SSM ポートフォワード経由で Zabbix GUI にアクセスするコマンド（実行後 http://localhost:8080/zabbix）"
+  description = "SSM ポートフォワード経由で Zabbix GUI にアクセスするコマンド（実行後 http://localhost:8080/）"
   value       = "aws ssm start-session --target ${aws_instance.zabbix_server.id} --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"80\"],\"localPortNumber\":[\"8080\"]}' --region ${var.aws_region}"
 }
 

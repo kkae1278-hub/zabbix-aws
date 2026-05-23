@@ -6,6 +6,26 @@ resource "aws_ssm_parameter" "cw_agent_config" {
   type = "String"
 
   value = jsonencode({
+    logs = {
+      logs_collected = {
+        files = {
+          collect_list = [
+            {
+              file_path         = "/var/log/zabbix/zabbix_server.log"
+              log_group_name    = "/zabbix/server"
+              log_stream_name   = "{instance_id}/zabbix_server"
+              retention_in_days = 30
+            },
+            {
+              file_path         = "/var/log/zabbix-setup.log"
+              log_group_name    = "/zabbix/server"
+              log_stream_name   = "{instance_id}/setup"
+              retention_in_days = 7
+            }
+          ]
+        }
+      }
+    }
     metrics = {
       namespace = "CWAgent"
       append_dimensions = {

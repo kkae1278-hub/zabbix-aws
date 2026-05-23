@@ -58,11 +58,11 @@ resource "aws_security_group" "monitored_alb" {
   vpc_id      = aws_vpc.monitored.id
 
   ingress {
-    description = "HTTP from anywhere"
+    description = "HTTP from Monitored VPC and Zabbix VPC (web scenarios)"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.monitored_vpc_cidr, var.vpc_cidr]
   }
 
   egress {

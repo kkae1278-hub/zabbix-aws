@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uo pipefail
+set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 
 # ============================================================
@@ -77,22 +77,19 @@ apt-get install -y \
   awscli
 
 # ============================================================
-# 5. Get DB Credentials from Secrets Manager (IMDSv2)
+# 5. Get DB Credentials from Secrets Manager
 # ============================================================
-TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
-  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-
 SECRET=$(aws secretsmanager get-secret-value \
   --secret-id "$SECRET_ARN" \
   --region "$AWS_REGION" \
   --query SecretString \
   --output text)
 
-DB_HOST=$(echo $SECRET | jq -r '.host')
-DB_PORT=$(echo $SECRET | jq -r '.port')
-DB_NAME=$(echo $SECRET | jq -r '.dbname')
-DB_USER=$(echo $SECRET | jq -r '.username')
-DB_PASS=$(echo $SECRET | jq -r '.password')
+DB_HOST=$(echo "$SECRET" | jq -r '.host')
+DB_PORT=$(echo "$SECRET" | jq -r '.port')
+DB_NAME=$(echo "$SECRET" | jq -r '.dbname')
+DB_USER=$(echo "$SECRET" | jq -r '.username')
+DB_PASS=$(echo "$SECRET" | jq -r '.password')
 
 # ============================================================
 # 6. Import Zabbix DB Schema
