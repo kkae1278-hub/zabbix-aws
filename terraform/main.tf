@@ -1,3 +1,6 @@
+# ============================================================
+# Terraform 設定・プロバイダー
+# ============================================================
 terraform {
   required_version = ">= 1.6.0"
 
@@ -26,9 +29,13 @@ terraform {
   # }
 }
 
+# ============================================================
+# AWS Provider
+# ============================================================
 provider "aws" {
   region = var.aws_region
 
+  # default_tags はすべてのリソースに共通タグを付与する
   default_tags {
     tags = {
       Project     = var.project_name
@@ -38,6 +45,9 @@ provider "aws" {
   }
 }
 
+# ============================================================
+# データソース（AZ / AMI）
+# ============================================================
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -57,6 +67,7 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+# Zabbix Server は Ubuntu 22.04 LTS を使用（公式パッケージが Ubuntu に対応しているため）
 data "aws_ami" "ubuntu_22_04" {
   most_recent = true
   owners      = ["099720109477"] # Canonical

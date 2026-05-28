@@ -10,7 +10,7 @@ resource "random_password" "rds" {
 resource "aws_secretsmanager_secret" "rds_password" {
   name                    = "${var.project_name}/rds/password"
   description             = "Zabbix RDS master password"
-  recovery_window_in_days = 0
+  recovery_window_in_days = 0 # 学習用：即時削除可能に設定。本番では 7〜30 日（削除後の復元猶予期間）を推奨
 
   tags = {
     Name = "${var.project_name}-rds-secret"

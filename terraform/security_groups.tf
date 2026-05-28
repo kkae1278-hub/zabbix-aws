@@ -15,6 +15,7 @@ resource "aws_security_group" "zabbix_server" {
     cidr_blocks = [var.vpc_cidr, var.monitored_vpc_cidr]
   }
 
+  # 学習用：全送信を許可。本番では SSM・RDS・NAT GW 等、必要な送信先のみに絞ることを推奨
   egress {
     description = "All outbound"
     from_port   = 0
@@ -65,6 +66,7 @@ resource "aws_security_group" "monitored_alb" {
     cidr_blocks = [var.monitored_vpc_cidr, var.vpc_cidr]
   }
 
+  # 学習用：全送信を許可。本番では必要な送信先のみに絞ることを推奨
   egress {
     description = "All outbound"
     from_port   = 0
@@ -104,6 +106,7 @@ resource "aws_security_group" "zabbix_agent" {
     security_groups = [aws_security_group.monitored_alb.id]
   }
 
+  # 学習用：全送信を許可。本番では SSM・NATゲートウェイ経由の通信等、必要な送信先のみに絞ることを推奨
   egress {
     description = "All outbound"
     from_port   = 0

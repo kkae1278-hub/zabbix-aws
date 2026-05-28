@@ -96,6 +96,9 @@ resource "aws_instance" "monitored_target" {
   }
 }
 
+# ============================================================
+# user_data 変更検知トリガー（agent_user_data.sh の内容ハッシュ）
+# ============================================================
 resource "terraform_data" "agent_user_data" {
   input = templatefile("${path.module}/agent_user_data.sh", {
     project_name   = var.project_name

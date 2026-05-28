@@ -3,12 +3,12 @@
 # ============================================================
 resource "aws_lb" "monitored" {
   name               = "${var.project_name}-monitored-alb"
-  internal           = true
+  internal           = true # 監視対象 VPC 内のみアクセス可能（インターネット非公開）
   load_balancer_type = "application"
   security_groups    = [aws_security_group.monitored_alb.id]
   subnets            = aws_subnet.monitored_private[*].id
 
-  enable_deletion_protection = false
+  enable_deletion_protection = false # 学習用：本番では true に設定
 
   access_logs {
     bucket  = aws_s3_bucket.alb_logs.id
@@ -53,6 +53,7 @@ resource "aws_lb_target_group_attachment" "monitored" {
   port             = 80
 }
 
+# 学習用：本番では HTTPS（443）リスナーを使用し、HTTP → HTTPS リダイレクトを設定する
 resource "aws_lb_listener" "monitored_http" {
   load_balancer_arn = aws_lb.monitored.arn
   port              = 80
@@ -72,7 +73,7 @@ data "aws_caller_identity" "current" {}
 # ============================================================
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${var.project_name}-alb-logs-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true
+  force_destroy = true # 学習用：本番では false に設定（誤削除防止）
 
   tags = {
     Name = "${var.project_name}-alb-logs"

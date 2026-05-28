@@ -23,38 +23,9 @@ apt-get upgrade -y
 
 # ============================================================
 # 2. CloudWatch Agent
+# SSM Association（cloudwatch_agent.tf）が全 EC2 に対して
+# インストール・設定を行うためここでは省略
 # ============================================================
-wget -q "https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb" \
-  -O /tmp/amazon-cloudwatch-agent.deb
-dpkg -i /tmp/amazon-cloudwatch-agent.deb
-
-cat <<EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
-{
-  "logs": {
-    "logs_collected": {
-      "files": {
-        "collect_list": [
-          {
-            "file_path": "/var/log/zabbix/zabbix_server.log",
-            "log_group_name": "${log_group}",
-            "log_stream_name": "{instance_id}/zabbix_server",
-            "retention_in_days": 30
-          },
-          {
-            "file_path": "/var/log/zabbix-setup.log",
-            "log_group_name": "${log_group}",
-            "log_stream_name": "{instance_id}/setup",
-            "retention_in_days": 7
-          }
-        ]
-      }
-    }
-  }
-}
-EOF
-
-systemctl enable amazon-cloudwatch-agent
-systemctl start amazon-cloudwatch-agent
 
 # ============================================================
 # 3. Zabbix Repository

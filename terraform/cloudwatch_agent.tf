@@ -74,7 +74,7 @@ resource "aws_ssm_association" "install_cw_agent" {
     version = "latest"
   }
 
-  apply_only_at_cron_interval = false
+  apply_only_at_cron_interval = false # 新規インスタンスが対象タグを持つと即時実行
 }
 
 # ============================================================
@@ -98,5 +98,5 @@ resource "aws_ssm_association" "configure_cw_agent" {
     optionalRestart               = "yes"
   }
 
-  apply_only_at_cron_interval = false
+  apply_only_at_cron_interval = false # 設定変更時に対象インスタンスへ即時適用
 }

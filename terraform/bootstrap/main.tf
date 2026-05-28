@@ -1,3 +1,7 @@
+# ============================================================
+# Terraform State 管理用 Bootstrap
+# main モジュールを apply する前に先にここを apply する
+# ============================================================
 terraform {
   required_version = ">= 1.6.0"
 
@@ -9,10 +13,16 @@ terraform {
   }
 }
 
+# ============================================================
+# AWS Provider
+# ============================================================
 provider "aws" {
   region = var.aws_region
 }
 
+# ============================================================
+# 変数・データソース
+# ============================================================
 variable "aws_region" {
   default = "ap-northeast-1"
 }
@@ -67,7 +77,7 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
 # ============================================================
 resource "aws_dynamodb_table" "tfstate_lock" {
   name         = "${var.project_name}-tfstate-lock"
-  billing_mode = "PAY_PER_REQUEST"
+  billing_mode = "PAY_PER_REQUEST" # ステートロック用途はアクセス頻度が低いため従量課金が適切
   hash_key     = "LockID"
 
   attribute {
