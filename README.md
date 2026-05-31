@@ -37,7 +37,7 @@ AWS SAP / SCS / ANS 資格レベルのセキュリティ・監視設計を実装
 |------|------|
 | Zabbix Web シナリオ | ALB に対して HTTP 200/404/503 を定期チェック |
 | Zabbix Agent 監視 | AP サーバーの CPU・メモリ・ディスクを収集 |
-| CloudWatch CWAgent | EC2 全台の mem/disk/cpu を 1 分間隔でカスタムメトリクス化 |
+| CloudWatch CWAgent | EC2 全台の mem/disk/cpu を 1 分間隔でカスタムメトリクス化（SSM Association で全インスタンスに自動インストール・設定）|
 | CloudWatch Dashboard | 5 行 × 2 列（EC2/RDS/ALB/CWAgent/VPC Peering 経路）|
 | CloudWatch Alarms | CPU high / Status check / RDS CPU / RDS storage / ALB 5xx / Root 使用（CIS 3.3）/ 不正 API（CIS 3.1）計 7 件 |
 
@@ -49,7 +49,7 @@ AWS SAP / SCS / ANS 資格レベルのセキュリティ・監視設計を実装
 | GuardDuty | ML ベース脅威検知（S3 監視 + EBS マルウェアスキャン） |
 | Security Hub | CIS AWS Foundations v1.4.0 + AWS FSBP を継続評価 |
 | VPC Flow Logs | 両 VPC の全通信を CloudWatch Logs に記録 |
-| Secrets Manager | RDS パスワードを自動生成・Secrets Manager で管理（自動ローテーションは未設定） |
+| Secrets Manager | RDS の `manage_master_user_password` により自動生成・管理・自動ローテーション対応。tfstate にパスワードが含まれない |
 
 ### インフラ設計
 | 設計方針 | 詳細 |
@@ -211,20 +211,18 @@ terraform apply \
 | `ec2.tf` `aws_instance.monitored_target` | 詳細モニタリング無効（デフォルト 5 分間隔） | CloudWatch Agent + Zabbix Agent で 1 分間隔メトリクスをカバー済み。詳細モニタリングは月額 $3.50/インスタンス | `monitoring = true` |
 | `rds.tf` `monitoring_interval` | `0`: Enhanced Monitoring 無効。OS プロセスレベルの詳細が取得不可 | `AWS/RDS` 標準メトリクス（`FreeableMemory`・`CPUUtilization`）で基本モニタリングはカバー済み。Enhanced Monitoring はプロセス単位分析用で学習スコープ外 | `60` + `monitoring_role_arn` を設定 |
 | `rds.tf` `performance_insights_enabled` | `false`: SQL 単位の待機分析・スロークエリ特定が不可 | DB チューニングは学習スコープ外。Zabbix 動作確認には不要 | `true` に変更 |
-| `secrets_manager.tf` `recovery_window_in_days` | `0`: シークレットの即時削除が可能、復元不可 | 同名シークレット（`zabbix/rds/password`）を即時再作成できるようにするため。猶予期間があると再作成がブロックされる | `7` 以上に変更 |
 | 各 CloudWatch Logs グループ | CMK 暗号化なし（AWS マネージドキーのみ） | KMS CMK は月額 $1/key のコストと IAM キーポリシー管理が増加 | 各 Log Group に `kms_key_id` を指定 |
 | 各 IAM Role | `description` フィールドなし | リソース名と `default_tags`（`Project = zabbix`）で用途・管理元が識別可能 | 各ロールに `description` を追加 |
 | `cloudwatch.tf` `aws_sns_topic.zabbix_alerts` | SNS トピックが CMK 暗号化なし | アラート通知はトランジェントなメッセージ。AWS マネージド暗号化で保護済み | `kms_master_key_id` に CMK ARN を指定 |
 | `cloudwatch.tf` SNS Subscription | `redrive_policy` なし: 配信失敗メッセージがサイレントに破棄される | 学習目的のメール通知。配信失敗は許容 | DLQ（SQS）を作成し `redrive_policy` を設定 |
-| `secrets_manager.tf` シークレット | デフォルト AWS マネージドキーで暗号化: CMK によるキー管理・監査が不可 | AWS マネージドキーでの暗号化は有効。CMK の管理は月額 $1 で学習環境では省略 | `kms_key_id` に CMK ARN を指定 |
-| `security_groups.tf` VPC Endpoint SG | egress ルールなし（ステートフル SG のため機能的問題はないが意図が不明確） | ステートフル SG のため egress ルールは機能的に不要 | 明示的な egress ルールを追加 |
+| RDS 自動管理シークレット | デフォルト AWS マネージドキーで暗号化: CMK によるキー管理・監査が不可 | AWS マネージドキーでの暗号化は有効。CMK の管理は月額 $1 で学習環境では省略 | `master_user_secret_kms_key_id` に CMK ARN を指定 |
 | `cloudtrail.tf` | S3 バケットにバージョニング・MFA Delete なし | MFA Delete は手動操作が必要。学習環境では操作手順の複雑化を避けるため省略 | バージョニング有効化 + MFA Delete を設定 |
 
 > **静的解析では検出されないリスク（インフラ固有）**
 >
 > | 問題 | 該当箇所 | 理由（学習用） | 本番での対策 |
 > |------|---------|-------------|------------|
-> | RDS パスワードが設定ファイルに平文記載 | `user_data.sh:124-129` | Zabbix Server の `zabbix_server.conf` には平文パスワードが必要。起動時に Secrets Manager から取得する現設計は正しいが、ローテーション連携が未実装 | Secrets Manager 自動ローテーション + ローテーションフック対応 |
+> | RDS パスワードが設定ファイルに平文記載 | `user_data.sh`（Zabbix Server 設定セクション） | `zabbix_server.conf` には平文パスワードが必要なため、起動時に Secrets Manager から取得して書き込む。`manage_master_user_password` により RDS 側の自動ローテーションは対応済みだが、ローテーション後の `zabbix_server.conf` 再書き込みは未実装 | Secrets Manager ローテーションフック（Lambda）で `zabbix_server.conf` を更新 + `zabbix-server` サービスを再起動 |
 > | Zabbix デフォルトパスワード（`Admin / zabbix`） | `user_data.sh:199` | インストール直後はデフォルトパスワード。変更スクリプトは用意済みだが自動実行はされない | 初回ログイン直後に変更必須（[変更スクリプト](terraform/scripts/change_zabbix_password.sh)） |
 > | ALB に WAF なし | `alb.tf` | ALB は Internal のため外部からのアクセスなし。WAF のルール設計・コスト（$5/WebACL/月）を省略 | AWS WAF WebACL を ALB に関連付け |
 > | AWS Config 未設定 | ― | CloudTrail で API 操作ログを代替。リソース変更の履歴追跡よりも構成の簡潔さを優先 | `aws_config_configuration_recorder` を追加 |
@@ -279,7 +277,8 @@ terraform apply \
 | EC2 | EBS ルートボリューム全インスタンスで暗号化済み |
 | EC2 | `key_name` 未設定（SSH キー不使用・SSM Session Manager のみ）|
 | RDS | ストレージ暗号化済み・バックアップ保持 7 日以上 |
-| シークレット | Secrets Manager で RDS パスワードを管理 |
+| シークレット | RDS `manage_master_user_password` で自動生成・管理・自動ローテーション。tfstate にパスワードが残らない |
+| セキュリティグループ | `aws_vpc_security_group_ingress_rule` / `egress_rule` によるルールベース管理（AWS provider v5 推奨）。ルール単位で独立管理し SG 全体の再作成を回避 |
 | S3 | 全バケットでパブリックアクセスブロック有効 |
 | VPC | SSM / Secrets Manager / CloudWatch Logs / S3 の VPC Endpoints 構成済み |
 | 監視 | ALB アクセスログ有効・CloudWatch Dashboard 設定済み・CloudWatch アラーム 7 件（全件アクション設定） |
