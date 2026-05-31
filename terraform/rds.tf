@@ -49,7 +49,10 @@ resource "aws_db_instance" "zabbix" {
 
   db_name  = var.rds_db_name
   username = var.rds_username
-  password = random_password.rds.result
+
+  # RDS がパスワードを生成して Secrets Manager で自動管理・ローテーションする
+  # tfstate にパスワードが平文で残らないため random_password より安全
+  manage_master_user_password = true
 
   db_subnet_group_name   = aws_db_subnet_group.zabbix.name
   vpc_security_group_ids = [aws_security_group.rds.id]

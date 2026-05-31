@@ -30,7 +30,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-# Secrets Manager 読み取り（DB パスワード取得用）
+# Secrets Manager 読み取り（RDS 自動管理シークレットの取得用）
 resource "aws_iam_role_policy" "secrets_manager_read" {
   name = "${var.project_name}-secrets-read"
   role = aws_iam_role.zabbix_server.id
@@ -44,7 +44,7 @@ resource "aws_iam_role_policy" "secrets_manager_read" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = aws_secretsmanager_secret.rds_password.arn
+        Resource = aws_db_instance.zabbix.master_user_secret[0].secret_arn
       }
     ]
   })

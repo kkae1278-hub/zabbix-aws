@@ -28,11 +28,11 @@ resource "aws_instance" "zabbix_server" {
   }
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    project_name    = var.project_name
-    zabbix_version  = var.zabbix_version
-    secret_arn      = aws_secretsmanager_secret.rds_password.arn
-    aws_region      = var.aws_region
-    log_group       = aws_cloudwatch_log_group.zabbix.name
+    project_name   = var.project_name
+    zabbix_version = var.zabbix_version
+    secret_arn     = aws_db_instance.zabbix.master_user_secret[0].secret_arn
+    aws_region     = var.aws_region
+    db_name        = var.rds_db_name
   }))
 
   metadata_options {
@@ -48,10 +48,7 @@ resource "aws_instance" "zabbix_server" {
     Role = "zabbix-server"
   }
 
-  depends_on = [
-    aws_db_instance.zabbix,
-    aws_secretsmanager_secret_version.rds_password
-  ]
+  depends_on = [aws_db_instance.zabbix]
 }
 
 # ============================================================

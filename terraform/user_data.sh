@@ -10,7 +10,7 @@ PROJECT_NAME="${project_name}"
 ZABBIX_VERSION="${zabbix_version}"
 SECRET_ARN="${secret_arn}"
 AWS_REGION="${aws_region}"
-LOG_GROUP="${log_group}"
+DB_NAME="${db_name}"
 
 exec > >(tee /var/log/zabbix-setup.log) 2>&1
 echo "=== Zabbix Setup Start: $(date) ==="
@@ -58,7 +58,7 @@ SECRET=$(aws secretsmanager get-secret-value \
 
 DB_HOST=$(echo "$SECRET" | jq -r '.host')
 DB_PORT=$(echo "$SECRET" | jq -r '.port')
-DB_NAME=$(echo "$SECRET" | jq -r '.dbname')
+# DB_NAME は RDS 管理シークレットに含まれないため templatefile 変数から取得
 DB_USER=$(echo "$SECRET" | jq -r '.username')
 DB_PASS=$(echo "$SECRET" | jq -r '.password')
 

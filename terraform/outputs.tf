@@ -24,8 +24,8 @@ output "rds_endpoint" {
 }
 
 output "secrets_manager_arn" {
-  description = "DB パスワードが格納された Secrets Manager ARN"
-  value       = aws_secretsmanager_secret.rds_password.arn
+  description = "RDS が自動管理する Secrets Manager ARN（DB パスワード）"
+  value       = aws_db_instance.zabbix.master_user_secret[0].secret_arn
 }
 
 output "ssm_connect_command" {
